@@ -2,11 +2,46 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "vmName": {
+    "companyPrefix": {
+      "type": "string",
+      "defaultValue": "foo",
+      "metadata": {
+        "description": "Company prefix used for all resources."
+      }
+    },
+    "dnsProxyName": {
       "type": "string",
       "defaultValue": "dnsproxy",
       "metadata": {
-        "description": "Name of the Virtual Machine."
+        "description": "Base name of the Virtual Machine."
+      }
+    },
+    "vmInstanceSuffix": {
+      "type": "string",
+      "defaultValue": "1",
+      "metadata": {
+        "description": "Suffix for DNS Proxy."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "defaultValue": "foo-vnet-hub",
+      "metadata": {
+        "description": "Name of the DNS Proxy VNet."
+      }
+    },
+    "vnetAddressPrefix": {
+      "type": "string",
+      "defaultValue": "10.100.0.0/16",
+      "metadata": {
+        "description": "Address space for DNS proxy VNet."
+      }
+    },
+    "subnetName": {
+      "type": "string",
+      "defaultValue": "DnsProxy",
+      "metadata": {
+        "description": "Name of the DNS Proxy Subnet."
       }
     },
     "adminUsername": {
@@ -70,22 +105,18 @@
       "type": "securestring",
       "defaultValue": "",
       "metadata": {
-        "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
+        "description": "The sasToken required to access _artifactsLocation. When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
       }
     }
   },
   "variables": {
     "ubuntuOSVersion": "18.04-LTS",
-    "asetName": "dnsproxy-avail",
-    "nsgName": "dnsproxy-nsg",
-    "vnetName": "dnsproxy-vnet",
-    "vnetAddressPrefix": "10.0.0.0/8",
-    "subNet1Name": "subnet1",
-    "subNet1Prefix": "10.1.0.0/16",
+    "vmName": "[concat(parameters('companyPrefix'), '-', 'vm', '-', parameters('dnsProxyName'), '-', parameters('vmInstanceSuffix'))]",
+    "nicName": "[concat(parameters('companyPrefix'), '-', 'nic', '-', parameters('dnsProxyName'), parameters('vmInstanceSuffix'))]",
+    "asetName": "[concat(parameters('companyPrefix'), '-', 'avail', '-', parameters('dnsProxyName'))]",
+    "nsgName": "[concat(parameters('companyPrefix'), '-', 'nsg', '-', parameters('dnsProxyName'))]",
     "storType": "Standard_LRS",
     "location": "[parameters('location')]",
-    "nicName": "[concat(parameters('vmName'), '-', 'nic')]",
-    "pipName": "[concat(parameters('vmName'), '-', 'pip')]",
     "scriptUrl": "[uri(parameters('_artifactsLocation'), concat('forwarderSetup.sh', parameters('_artifactsLocationSasToken')))]",
     "linuxConfiguration": {
       "disablePasswordAuthentication": true,
@@ -151,46 +182,13 @@
       }
     },
     {
-      "type": "Microsoft.Network/virtualNetworks",
-      "comments": "An example virtual network, for real scenarios add the DNS forwarder to your own vnet",
-      "name": "[variables('vnetName')]",
-      "apiVersion": "2020-05-01",
-      "location": "[variables('location')]",
-      "properties": {
-        "addressSpace": {
-          "addressPrefixes": [
-            "[variables('vnetAddressPrefix')]"
-          ]
-        },
-        "subnets": [
-          {
-            "name": "[variables('subnet1Name')]",
-            "properties": {
-              "addressPrefix": "[variables('subNet1Prefix')]"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "type": "Microsoft.Network/publicIPAddresses",
-      "comments": "A public IP to allow us to SSH into the VM, not recommended for production DNS servers",
-      "name": "[variables('pipName')]",
-      "apiVersion": "2020-05-01",
-      "location": "[variables('location')]",
-      "properties": {
-        "publicIPAllocationMethod": "Dynamic"
-      }
-    },
-    {
       "type": "Microsoft.Network/networkInterfaces",
       "comments": "A single network interface on each DNS server",
       "name": "[variables('nicName')]",
       "apiVersion": "2020-05-01",
       "location": "[variables('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses/', variables('pipName'))]",
-        "[resourceId('Microsoft.Network/virtualNetworks/', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
         "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
       ],
       "properties": {
@@ -199,14 +197,11 @@
         },
         "ipConfigurations": [
           {
-            "name": "ipconfig1",
+            "name": "ipconfig",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('pipName'))]"
-              },
               "subnet": {
-                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnet1Name'))]"
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
               }
             }
           }
@@ -216,8 +211,8 @@
     {
       "type": "Microsoft.Compute/virtualMachines",
       "comments": "A stock Ubuntu server, a VM extension will add the DNS server to it later",
-      "name": "[parameters('vmName')]",
-      "apiVersion": "2019-12-01",
+      "name": "[variables('vmName')]",
+      "apiVersion": "2019-07-01",
       "location": "[variables('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]",
@@ -232,7 +227,7 @@
           "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computerName": "[parameters('vmName')]",
+          "computerName": "[variables('vmName')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[parameters('adminPasswordOrKey')]",
           "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), json('null'), variables('linuxConfiguration'))]"
@@ -266,12 +261,12 @@
     },
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
-      "comments": "The shell script to install Bind9 and setup the ACL and forwarders.  If this step fails, check the logs in /var/log/waagent.log and /var/log/azure/* for details",
-      "name": "[concat(parameters('vmName'),'/setupdnsfirewall')]",
+      "comments": "The shell script to install Bind9 and setup the ACL and forwarders. If this step fails, check the logs in /var/log/waagent.log and /var/log/azure/* for details",
+      "name": "[concat(variables('vmName'),'/setupdnsfirewall')]",
       "apiVersion": "2019-12-01",
       "location": "[variables('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
+        "[resourceId('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
       ],
       "properties": {
         "publisher": "Microsoft.Azure.Extensions",
@@ -282,7 +277,7 @@
           "fileUris": [
             "[variables('scriptUrl')]"
           ],
-          "commandToExecute": "[concat('sh forwarderSetup.sh',' ',parameters('forwardIP'),' ', variables('vnetAddressPrefix'))]"
+          "commandToExecute": "[concat('sh forwarderSetup.sh',' ',parameters('forwardIP'),' ',parameters('vnetAddressPrefix'))]"
         }
       }
     }
