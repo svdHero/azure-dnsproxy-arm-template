@@ -247,7 +247,8 @@
           },
           "osDisk": {
             "caching": "ReadWrite",
-            "createOption": "FromImage"
+            "createOption": "FromImage",
+            "name": "[concat(parameters('companyPrefix'), '-', 'osdisk', '-', parameters('dnsProxyName'), parameters('vmInstanceSuffix'))]"
           }
         },
         "networkProfile": {
