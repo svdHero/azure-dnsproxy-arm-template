@@ -135,7 +135,7 @@
       "type": "Microsoft.Storage/StorageAccounts",
       "comments": "Storage account for the VHD files for the VMs",
       "name": "[parameters('storageAccountName')]",
-      "apiVersion": "2019-06-01",
+      "apiVersion": "2021-04-01",
       "location": "[variables('location')]",
       "sku": {
         "name": "[variables('storType')]"
@@ -146,7 +146,7 @@
       "type": "Microsoft.Compute/availabilitySets",
       "comments": "availability set for creating a HA cluster, run the template multiple times to get multiple DNS servers",
       "name": "[variables('asetName')]",
-      "apiVersion": "2019-12-01",
+      "apiVersion": "2021-03-01",
       "location": "[variables('location')]",
       "sku": {
         "name": "Aligned"
@@ -160,7 +160,7 @@
       "type": "Microsoft.Network/networkSecurityGroups",
       "comments": "An NSG to prevent inbound traffic other than SSH, set sourceAddressPrefix to restrict access further or block all together (or remove the public ip) and ssh in from another vm",
       "name": "[variables('nsgName')]",
-      "apiVersion": "2020-05-01",
+      "apiVersion": "2020-11-01",
       "location": "[variables('location')]",
       "properties": {
         "securityRules": [
@@ -185,7 +185,7 @@
       "type": "Microsoft.Network/networkInterfaces",
       "comments": "A single network interface on each DNS server",
       "name": "[variables('nicName')]",
-      "apiVersion": "2020-05-01",
+      "apiVersion": "2020-11-01",
       "location": "[variables('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/virtualNetworks/', parameters('vnetName'))]",
@@ -212,7 +212,7 @@
       "type": "Microsoft.Compute/virtualMachines",
       "comments": "A stock Ubuntu server, a VM extension will add the DNS server to it later",
       "name": "[variables('vmName')]",
-      "apiVersion": "2019-07-01",
+      "apiVersion": "2021-03-01",
       "location": "[variables('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]",
@@ -263,7 +263,7 @@
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "comments": "The shell script to install Bind9 and setup the ACL and forwarders. If this step fails, check the logs in /var/log/waagent.log and /var/log/azure/* for details",
       "name": "[concat(variables('vmName'),'/setupdnsfirewall')]",
-      "apiVersion": "2019-12-01",
+      "apiVersion": "2021-03-01",
       "location": "[variables('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
