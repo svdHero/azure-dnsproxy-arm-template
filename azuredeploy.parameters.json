@@ -11,6 +11,9 @@
         "vmInstanceSuffix": {
             "value": "1"
         },
+        "vnetResourceGroupName": {
+            "value": "foo-rg-networkinfrastructure"
+        },
         "vnetName": {
             "value": "foo-vnet-hub"
         },
@@ -21,7 +24,7 @@
             "value": "" // TODO: Fill in parameter value
         },
         "storageAccountName": {
-            "value": "" // TODO: Fill in parameter value
+            "value": "stbar" // TODO: Fill in parameter value
         },
         "authenticationType": {
             "value": "password"
