@@ -20,6 +20,9 @@
         "vnetAddressPrefix": {
             "value": "10.100.0.0/16"
         },
+        "privateIpAddress": {
+            "value": "10.100.2.24/32"
+        },
         "adminUsername": {
             "value": "" // TODO: Fill in parameter value
         },

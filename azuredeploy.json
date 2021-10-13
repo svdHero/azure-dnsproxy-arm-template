@@ -51,6 +51,13 @@
         "description": "Name of the DNS Proxy Subnet."
       }
     },
+    "privateIpAddress": {
+      "type": "string",
+      "defaultValue": "10.100.2.24/32",
+      "metadata": {
+        "description": "Static private ip address for the dns proxy machine."
+      }
+    },
     "adminUsername": {
       "type": "string",
       "metadata": {
@@ -164,48 +171,21 @@
       }
     },
     {
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "comments": "An NSG to prevent inbound traffic other than SSH, set sourceAddressPrefix to restrict access further or block all together (or remove the public ip) and ssh in from another vm",
-      "name": "[variables('nsgName')]",
-      "apiVersion": "2020-11-01",
-      "location": "[variables('location')]",
-      "properties": {
-        "securityRules": [
-          {
-            "name": "allow_ssh_in",
-            "properties": {
-              "description": "The only thing allowed is SSH",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "22",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 100,
-              "direction": "Inbound"
-            }
-          }
-        ]
-      }
-    },
-    {
       "type": "Microsoft.Network/networkInterfaces",
       "comments": "A single network interface on each DNS server",
       "name": "[variables('nicName')]",
       "apiVersion": "2020-11-01",
       "location": "[variables('location')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
-      ],
       "properties": {
         "networkSecurityGroup": {
-          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+          "id": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
         },
         "ipConfigurations": [
           {
             "name": "ipconfig",
             "properties": {
-              "privateIPAllocationMethod": "Dynamic",
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[parameters('privateIpAddress')]",
               "subnet": {
                 "id": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vnetName'), parameters('subnetName'))]"
               }
