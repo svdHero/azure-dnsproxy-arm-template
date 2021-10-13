@@ -128,7 +128,6 @@
     "vmName": "[concat(parameters('companyPrefix'), '-', 'vm', '-', parameters('dnsProxyName'), '-', parameters('vmInstanceSuffix'))]",
     "nicName": "[concat(parameters('companyPrefix'), '-', 'nic', '-', parameters('dnsProxyName'), parameters('vmInstanceSuffix'))]",
     "asetName": "[concat(parameters('companyPrefix'), '-', 'avail', '-', parameters('dnsProxyName'))]",
-    "nsgName": "[concat(parameters('companyPrefix'), '-', 'nsg', '-', parameters('dnsProxyName'))]",
     "storType": "Standard_LRS",
     "location": "[parameters('location')]",
     "scriptUrl": "[uri(parameters('_artifactsLocation'), concat('forwarderSetup.sh', parameters('_artifactsLocationSasToken')))]",
@@ -177,9 +176,6 @@
       "apiVersion": "2020-11-01",
       "location": "[variables('location')]",
       "properties": {
-        "networkSecurityGroup": {
-          "id": "[resourceId(parameters('vnetResourceGroupName'), 'Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
-        },
         "ipConfigurations": [
           {
             "name": "ipconfig",
