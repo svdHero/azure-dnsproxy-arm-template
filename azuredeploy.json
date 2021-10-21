@@ -53,7 +53,7 @@
     },
     "privateIpAddress": {
       "type": "string",
-      "defaultValue": "10.100.2.24/32",
+      "defaultValue": "10.100.2.24",
       "metadata": {
         "description": "Static private ip address for the dns proxy machine."
       }
