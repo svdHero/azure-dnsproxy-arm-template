@@ -16,8 +16,7 @@ sudo apt-get install bind9 -y
 # configure Bind9 for forwarding
 sudo cat > named.conf.options << EndOFNamedConfOptions
 acl goodclients {
-#    $2;
-    any;
+    $2;
     localhost;
     localnets;
 };
@@ -27,7 +26,8 @@ options {
 
         recursion yes;
 
-        allow-query { goodclients; };
+        allow-query { any; };
+        # allow-query { goodclients; };
 
         forwarders {
             $1;
